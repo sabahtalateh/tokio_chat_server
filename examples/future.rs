@@ -24,8 +24,8 @@ impl Future for MyFut {
     /// Increment internal counter to track number of polls
     ///
     /// Call `task::current().notify()` to tell the executor
-    /// that future can be polled again immediately (call `poll` again).
-    /// Usually for this purpose `mio` crate is using
+    /// that future can be polled again immediately (executor will `poll` it again).
+    /// In `tokio` for this purpose `mio` crate is used
     /// that used OS specific polling features `epoll(linux)/kqueue(darwin)/iocp(windows)`
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.n += 1;

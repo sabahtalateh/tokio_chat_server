@@ -60,8 +60,8 @@ impl Future for MyFut {
     /// Increment internal counter to track number of polls
     ///
     /// Call `task::current().notify()` to tell the executor
-    /// that future can be polled again immediately (call `poll` again).
-    /// Usually for this purpose `mio` crate is using
+    /// that future can be polled again immediately (executor will `poll` it again).
+    /// In `tokio` for this purpose `mio` crate is used
     /// that used OS specific polling features `epoll(linux)/kqueue(darwin)/iocp(windows)`
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         self.n += 1;
@@ -77,40 +77,39 @@ impl Future for MyFut {
 }
 
 fn main() {
-        /// Implicit types declarations in this file can be omitted
-        let my_fut: MyFut = MyFut::new();
-    
-        /// Function to use in `AndThen` combinator
-        let f: fn(i32) -> Result<i32, ()> = |val| {
-            println!("done");
-            Ok(val)
-        };
-    
-        /// `AndThen` type returned by `.and_then(closure)` combinator
-        /// implements `Future` too so it can be used as regular future
-        ///
-        /// First generic type parameter is `MyFut` - future that will be polled first
-        ///
-        /// Second is a type that will be returned from the applied function
-        /// It should realize `IntoFuture` trait so that it can be used in
-        /// next possible combinator like `.map()` or one more `.and_then()`
-        ///
-        /// Third is a function that will be applied to the `MyFut` result
-        /// It's return type should be the same as second type parameter
-        let my_fut: AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>> = my_fut.and_then(f);
-    
-        /// Futures should be run onto an executor
-        ///
-        /// Later we will consider tokio executor instead of
-        /// one provided by the `future` trait
-        let mut s = spawn(my_fut);
-    
-        /// Wait for the outer future `AndThen` which will
-        /// first execute inner `MyFut` and then apply `f()` to it
-        let r = s.wait_future();
-        println!("{:?}", r);
-}
+    /// Implicit types declarations in this file can be omitted
+    let my_fut: MyFut = MyFut::new();
 
+    /// Function to use in `AndThen` combinator
+    let f: fn(i32) -> Result<i32, ()> = |val| {
+        println!("done");
+        Ok(val)
+    };
+
+    /// `AndThen` type returned by `.and_then(closure)` combinator
+    /// implements `Future` too so it can be used as regular future
+    ///
+    /// First generic type parameter is `MyFut` - future that will be polled first
+    ///
+    /// Second is a type that will be returned from the applied function
+    /// It should realize `IntoFuture` trait so that it can be used in
+    /// next possible combinator like `.map()` or one more `.and_then()`
+    ///
+    /// Third is a function that will be applied to the `MyFut` result
+    /// It's return type should be the same as second type parameter
+    let my_fut: AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>> = my_fut.and_then(f);
+
+    /// Futures should be run onto an executor
+    ///
+    /// Later we will consider tokio executor instead of
+    /// one provided by the future trait
+    let mut s = spawn(my_fut);
+
+    /// Wait for the outer future `AndThen` which will
+    /// first execute inner `MyFut` and then apply `f()` to it
+    let r = s.wait_future();
+    println!("{:?}", r);
+}
 ```
 
  
