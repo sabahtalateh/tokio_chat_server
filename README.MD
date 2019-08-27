@@ -4,7 +4,7 @@
 
 Ну и вот. Значит попробуем разобраться с футурами в расте на примере чат сервера, это пример из документации по [Tokio](https://tokio.rs/docs/going-deeper/chat/), однако мне было не особо понятно всё что я там видел до тех пор пока я не стал писать это сам, поочерёдно реализую необходимый функционал, вобщем можт кому будет интересно а кому и не будет. А всем остальным бог судья
 
-###Футуры
+### Футуры
 Крэйт [`futures`](https://docs.rs/futures/0.1.28/futures/) определяет трэйт [`Future`](https://docs.rs/futures/0.1.28/futures/future/trait.Future.html), основным методом которого является `poll`. Обратимся же поскорее к его [сигнатуре](https://docs.rs/futures/0.1.28/futures/future/trait.Future.html#required-methods).
 ```rust
 fn poll(&mut self) -> Poll<Self::Item, Self::Error>
