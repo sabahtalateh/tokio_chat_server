@@ -56,7 +56,7 @@ impl Future for MyFut {
     /// Error is of unit type
     type Error = ();
 
-    /// Poll `MyFut` 10 times until it's ready
+    /// Poll `MyFut` 3 times until it's ready
     /// Increment internal counter to track number of polls
     ///
     /// Call `task::current().notify()` to tell the executor
