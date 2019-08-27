@@ -77,7 +77,7 @@ impl Future for MyFut {
 }
 
 fn main() {
-    /// Implicit types declarations in this file can be omitted
+        /// Implicit types declarations in this file can be omitted
         let my_fut: MyFut = MyFut::new();
     
         /// Function to use in `AndThen` combinator
@@ -102,7 +102,7 @@ fn main() {
         /// Futures should be run onto an executor
         ///
         /// Later we will consider tokio executor instead of
-        /// one provided by the future trait
+        /// one provided by the `future` trait
         let mut s = spawn(my_fut);
     
         /// Wait for the outer future `AndThen` which will
