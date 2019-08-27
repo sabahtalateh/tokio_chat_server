@@ -78,29 +78,37 @@ impl Future for MyFut {
 
 fn main() {
     /// Implicit types declarations in this file can be omitted
-    let my_fut: MyFut = MyFut::new();
-
-    /// Function to use in `AndThen` combinator
-    let f: fn(i32) -> Result<i32, ()> = |val| {
-        println!("done");
-        Ok(val)
-    };
-
-    /// `AndThen` type returned by `.and_then(closure)` combinator
-    /// implements `Future` too so it can be used as regular future
-    ///
-    /// First generic type parameter is `MyFut` - future that will be polled first
-    ///
-    /// Second is a type that will be returned from the applied function
-    /// It should realize `IntoFuture` trait so that it can be used in
-    /// next possible combinator like `.map()` or one more `.and_then()`
-    ///
-    /// Third is a function that will be applied to the `MyFut` result
-    /// It's return type should be the same as second type parameter
-    let my_fut: AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>> = my_fut.and_then(f);
-    let mut s = spawn(my_fut);
-    let r = s.wait_future();
-    println!("{:?}", r);
+        let my_fut: MyFut = MyFut::new();
+    
+        /// Function to use in `AndThen` combinator
+        let f: fn(i32) -> Result<i32, ()> = |val| {
+            println!("done");
+            Ok(val)
+        };
+    
+        /// `AndThen` type returned by `.and_then(closure)` combinator
+        /// implements `Future` too so it can be used as regular future
+        ///
+        /// First generic type parameter is `MyFut` - future that will be polled first
+        ///
+        /// Second is a type that will be returned from the applied function
+        /// It should realize `IntoFuture` trait so that it can be used in
+        /// next possible combinator like `.map()` or one more `.and_then()`
+        ///
+        /// Third is a function that will be applied to the `MyFut` result
+        /// It's return type should be the same as second type parameter
+        let my_fut: AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>> = my_fut.and_then(f);
+    
+        /// Futures should be run onto an executor
+        ///
+        /// Later we will consider tokio executor instead of
+        /// one provided by the future trait
+        let mut s = spawn(my_fut);
+    
+        /// Wait for the outer future `AndThen` which will
+        /// first execute inner `MyFut` and then apply `f()` to it
+        let r = s.wait_future();
+        println!("{:?}", r);
 }
 
 ```
