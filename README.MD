@@ -30,12 +30,12 @@ pub enum Async<T> {
 }
 ```
 Зачем нам всё это добро? Чтобы приблизить наступление всепланетного коммунизма.
-Семантически `Poll` или в переводе на язык Пушкина и Чаадаева, то есть на 1С - `Опрос`, предстваляет ответ на дамское вопрошание вопрошание `Изволил ли господин сходить за рогаликами?`, прогрессивная система типов помогает нам выразить ответ на такой каверзный вопрос, `Господин в добром здравии(Идёт за рогаликами)/Result(NotReady)`, `Господин в добром здравии(Более того стоит возле вас с рогаликом в руке)/Result(Ready(T))` где `T` - тип который вернёт футура когда выполнится и `По дороге к пекарне господина взорвали революционеры/Err(E)` где `E` - тип ошибки, например `io::Error`.
+Семантически `Poll` или в переводе на язык Пушкина и Чаадаева, то есть на 1С - `Опрос`, предстваляет ответ на дамское вопрошание вопрошание `Изволил ли господин сходить за рогаликами?`, прогрессивная система типов помогает нам выразить ответ на такой каверзный вопрос одним из следующих образов: `Господин в добром здравии(Идёт за рогаликами)/Result(NotReady)`, `Господин в добром здравии(Более того стоит возле вас с рогаликом в руке)/Result(Ready(T))` где `T` - тип который вернёт футура когда выполнится и `По дороге к пекарне господина взорвали революционеры/Err(E)` где `E` - тип ошибки, например `io::Error`.
 
 Реализуем трэйт `Future` для нашего собственного типа. Ниже приведён код файла [`examples/future.rs`](examples/future.rs) для запуска `cargo run --example future`
 ```rust
 use futures::task::spawn;
-use futures::{task, AndThen, Async, Future, Poll};
+use futures::{task, AndThen, Async, Future, Poll, Map};
 
 /// Our own type `MyFut`
 #[derive(Debug)]
@@ -83,7 +83,7 @@ fn main() {
     /// Function to use in `AndThen` combinator
     let f: fn(i32) -> Result<i32, ()> = |val| {
         println!("done");
-        Ok(val)
+        Ok(val - 100)
     };
 
     /// `AndThen` type returned by `.and_then(closure)` combinator
@@ -99,17 +99,33 @@ fn main() {
     /// It's return type should be the same as second type parameter
     let my_fut: AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>> = my_fut.and_then(f);
 
+    /// `Map` type parameterized with 2 args
+    ///
+    /// First one `AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>>` is a `Future` to map
+    ///
+    /// Second one is a function that wll be applied to `v`
+    /// once a `Future` will be ready (it's `poll` returns `Ok(Async::Ready(v))`)
+    ///
+    /// Note that instead of `fn(i32) -> Result<i32, ()>` for `AndThen` we use `fn(i32)-> i32`
+    /// for map because semantics of `AndThen` is to run another future once the previous one completes
+    /// and the semantics of `Map` is to map the result of the future from one value to another
+    let my_fut : Map<AndThen<MyFut, Result<i32, ()>, fn(i32) -> Result<i32, ()>>, fn(i32)-> i32>= my_fut.map(|x| {
+        x + 1000
+    });
+
     /// Futures should be run onto an executor
     ///
     /// Later we will consider tokio executor instead of
     /// one provided by the future trait
     let mut s = spawn(my_fut);
 
-    /// Wait for the outer future `AndThen` which will
-    /// first execute inner `MyFut` and then apply `f()` to it
+    /// Wait for the outer future `Map` which will poll `AndThen`  which in turn will poll `MyFut`
     let r = s.wait_future();
     println!("{:?}", r);
 }
-```
 
+```
+Можно посмотреть [видео дебага](assets/poll_dbg.mp4) на котром видно как футуры по цепочке опрашивают друг друга от самой верхней `Map` до нижней `MyFut` 
+
+ 
  
